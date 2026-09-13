@@ -1,0 +1,6 @@
+# OpenVPN / Easy-RSA certificate monitoring
+PKI_DIR="/etc/openvpn/easy-rsa/pki"
+
+# Keep expired certificates visible in Zabbix for this many days.
+# They are NOT deleted from Easy-RSA; they are only excluded from LLD after this period.
+EXPIRED_KEEP_DAYS=30
