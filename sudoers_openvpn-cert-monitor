@@ -1,0 +1,2 @@
+# Allow only the OpenVPN certificate collector to run as root.
+zabbix ALL=(root) NOPASSWD: /usr/local/libexec/zabbix/openvpn-cert-monitor.sh
