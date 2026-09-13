@@ -2,19 +2,20 @@
 
 ## 7.0-1 - 2026-09-13
 
-- mantém certificados expirados no discovery por até 30 dias;
-- exclui automaticamente do LLD certificados expirados há mais de 30 dias;
-- exclui automaticamente do LLD certificados revogados;
-- não remove nem altera arquivos da PKI Easy-RSA;
-- adiciona `ignored_old_expired` e `ignored_revoked` ao resumo;
-- adiciona itens Zabbix para os novos contadores;
-- inclui configuração externa para `PKI_DIR` e `EXPIRED_KEEP_DAYS`;
-- inclui documentação de instalação e testes.
+- keeps expired certificates in discovery for up to 30 days;
+- automatically excludes certificates expired for more than 30 days from LLD;
+- automatically excludes revoked certificates from LLD;
+- does not remove or modify Easy-RSA PKI files;
+- adds `ignored_old_expired` and `ignored_revoked` to the summary;
+- adds Zabbix items for the new counters;
+- adds external configuration for `PKI_DIR` and `EXPIRED_KEEP_DAYS`;
+- adds installation and testing documentation;
+- adds bilingual documentation with English as the default README and Brazilian Portuguese as `README.pt-BR.md`.
 
 ## 7.0-0
 
-- versão inicial do monitoramento OpenVPN/Easy-RSA por Zabbix Agent 2;
-- item mestre JSON;
-- métricas agregadas;
-- discovery LLD por certificado;
-- alertas por 60/30/15/7 dias e certificado expirado.
+- initial OpenVPN/Easy-RSA monitoring version using Zabbix Agent 2;
+- JSON master item;
+- aggregated certificate metrics;
+- per-certificate LLD discovery;
+- alerts for 60/30/15/7 days and expired certificates.
