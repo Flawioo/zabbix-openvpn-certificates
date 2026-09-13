@@ -8,7 +8,7 @@ Kit reutilizável para monitorar certificados X.509 de clientes OpenVPN/Easy-RSA
 - certificados válidos, expirados e revogados;
 - certificados que vencem em 60, 30, 15 e 7 dias;
 - dias restantes por certificado;
-- data de expiração, serial, status e caminho do arquivo;
+- data de expiração, serial e status;
 - erros de leitura do coletor;
 - quantidade de expirados antigos retirados do discovery;
 - quantidade de revogados retirados do discovery.
@@ -24,19 +24,7 @@ Por padrão:
 - expirado há mais de 30 dias: permanece no Easy-RSA, mas deixa de entrar no LLD;
 - revogado: permanece no Easy-RSA, mas deixa de entrar no LLD.
 
-O template usa `lifetime: 7d`, portanto recursos que desaparecerem do discovery são removidos pelo Zabbix após o período definido na regra LLD.
-
-O prazo de 30 dias pode ser alterado em:
-
-```bash
-/etc/zabbix/openvpn-cert-monitor.conf
-```
-
-Exemplo:
-
-```bash
-EXPIRED_KEEP_DAYS=30
-```
+O template usa `lifetime: 7d`, portanto recursos que desaparecerem do discovery são removidos pelo Zabbix após esse período.
 
 ## Requisitos
 
@@ -57,33 +45,51 @@ openvpn-cert-monitor.conf.example
 zabbix_agent2_openvpn-cert-monitor.conf
 sudoers_openvpn-cert-monitor
 template_openvpn_certificates_zabbix_7.0.yaml
-install.sh
-uninstall.sh
 README.md
 CHANGELOG.md
 ```
 
 ## Instalação
 
-Clone ou copie este diretório para o servidor que contém a PKI Easy-RSA.
-
-Execute:
+Clone o repositório no servidor que contém a PKI Easy-RSA:
 
 ```bash
-chmod +x install.sh
-sudo ./install.sh
+git clone https://github.com/Flawioo/zabbix-openvpn-certificates.git
+cd zabbix-openvpn-certificates
 ```
 
-O instalador cria:
+Instale o coletor:
 
-```text
-/usr/local/libexec/zabbix/openvpn-cert-monitor.sh
-/etc/zabbix/openvpn-cert-monitor.conf
-/etc/zabbix/zabbix_agent2.d/openvpn-cert-monitor.conf
-/etc/sudoers.d/zabbix-openvpn-cert-monitor
+```bash
+install -d -m 0755 /usr/local/libexec/zabbix
+install -m 0755 openvpn-cert-monitor.sh /usr/local/libexec/zabbix/openvpn-cert-monitor.sh
 ```
 
-e reinicia o `zabbix-agent2`.
+Instale a configuração:
+
+```bash
+cp openvpn-cert-monitor.conf.example /etc/zabbix/openvpn-cert-monitor.conf
+```
+
+Instale o UserParameter:
+
+```bash
+cp zabbix_agent2_openvpn-cert-monitor.conf /etc/zabbix/zabbix_agent2.d/openvpn-cert-monitor.conf
+```
+
+Instale a regra sudoers e valide:
+
+```bash
+cp sudoers_openvpn-cert-monitor /etc/sudoers.d/zabbix-openvpn-cert-monitor
+chmod 440 /etc/sudoers.d/zabbix-openvpn-cert-monitor
+visudo -cf /etc/sudoers.d/zabbix-openvpn-cert-monitor
+```
+
+Reinicie o agente:
+
+```bash
+systemctl restart zabbix-agent2
+```
 
 ## Configuração
 
@@ -93,7 +99,7 @@ A configuração padrão considera a PKI em:
 /etc/openvpn/easy-rsa/pki
 ```
 
-Para outro caminho, edite:
+Para outro caminho ou para alterar a retenção de expirados, edite:
 
 ```bash
 vi /etc/zabbix/openvpn-cert-monitor.conf
@@ -120,7 +126,7 @@ Teste como o usuário do agente:
 sudo -u zabbix /usr/local/libexec/zabbix/openvpn-cert-monitor.sh | jq '.summary'
 ```
 
-Liste certificados que ainda estão expirados e visíveis no discovery:
+Liste certificados expirados que ainda permanecem no discovery:
 
 ```bash
 /usr/local/libexec/zabbix/openvpn-cert-monitor.sh | \
@@ -183,11 +189,3 @@ A regra `sudoers` permite ao usuário `zabbix` executar somente:
 ```text
 /usr/local/libexec/zabbix/openvpn-cert-monitor.sh
 ```
-
-## Desinstalação
-
-```bash
-sudo ./uninstall.sh
-```
-
-A configuração `/etc/zabbix/openvpn-cert-monitor.conf` é preservada.
