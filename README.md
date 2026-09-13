@@ -1,32 +1,34 @@
 # OpenVPN / Easy-RSA Certificate Monitor for Zabbix 7.0
 
-Kit reutilizável para monitorar certificados X.509 de clientes OpenVPN/Easy-RSA usando Zabbix Agent 2.
+**English** | [Português (Brasil)](README.pt-BR.md)
 
-## O que monitora
+Reusable monitoring kit for OpenVPN/Easy-RSA X.509 certificates using Zabbix Agent 2.
 
-- total de certificados em `pki/issued`;
-- certificados válidos, expirados e revogados;
-- certificados que vencem em 60, 30, 15 e 7 dias;
-- dias restantes por certificado;
-- data de expiração, serial e status;
-- erros de leitura do coletor;
-- quantidade de expirados antigos retirados do discovery;
-- quantidade de revogados retirados do discovery.
+## What it monitors
 
-## Política de limpeza do monitoramento
+- total certificates in `pki/issued`;
+- valid, expired, and revoked certificates;
+- certificates expiring within 60, 30, 15, and 7 days;
+- remaining days per certificate;
+- expiration date, serial number, and status;
+- collector read/parsing errors;
+- number of old expired certificates excluded from discovery;
+- number of revoked certificates excluded from discovery.
 
-O coletor **não apaga certificados nem altera a PKI**.
+## Monitoring cleanup policy
 
-Por padrão:
+The collector **does not delete certificates and does not modify the PKI**.
 
-- certificado válido: monitorado;
-- expirado entre 0 e 30 dias: continua no Zabbix e mantém o alerta;
-- expirado há mais de 30 dias: permanece no Easy-RSA, mas deixa de entrar no LLD;
-- revogado: permanece no Easy-RSA, mas deixa de entrar no LLD.
+By default:
 
-O template usa `lifetime: 7d`, portanto recursos que desaparecerem do discovery são removidos pelo Zabbix após esse período.
+- valid certificate: monitored normally;
+- expired for 0 to 30 days: remains in Zabbix and keeps the alert active;
+- expired for more than 30 days: remains in Easy-RSA but is excluded from LLD;
+- revoked: remains in Easy-RSA but is excluded from LLD.
 
-## Requisitos
+The template uses `lifetime: 7d`, so resources that disappear from discovery are removed by Zabbix after that period.
+
+## Requirements
 
 - Linux
 - OpenVPN
@@ -35,9 +37,9 @@ O template usa `lifetime: 7d`, portanto recursos que desaparecerem do discovery 
 - Zabbix Agent 2
 - Zabbix Server 7.0
 - `sudo`
-- `jq` recomendado para testes
+- `jq` recommended for testing
 
-## Arquivos
+## Files
 
 ```text
 openvpn-cert-monitor.sh
@@ -46,38 +48,39 @@ zabbix_agent2_openvpn-cert-monitor.conf
 sudoers_openvpn-cert-monitor
 template_openvpn_certificates_zabbix_7.0.yaml
 README.md
+README.pt-BR.md
 CHANGELOG.md
 ```
 
-## Instalação
+## Installation
 
-Clone o repositório no servidor que contém a PKI Easy-RSA:
+Clone the repository on the server that stores the Easy-RSA PKI:
 
 ```bash
 git clone https://github.com/Flawioo/zabbix-openvpn-certificates.git
 cd zabbix-openvpn-certificates
 ```
 
-Instale o coletor:
+Install the collector:
 
 ```bash
 install -d -m 0755 /usr/local/libexec/zabbix
 install -m 0755 openvpn-cert-monitor.sh /usr/local/libexec/zabbix/openvpn-cert-monitor.sh
 ```
 
-Instale a configuração:
+Install the configuration file:
 
 ```bash
 cp openvpn-cert-monitor.conf.example /etc/zabbix/openvpn-cert-monitor.conf
 ```
 
-Instale o UserParameter:
+Install the UserParameter:
 
 ```bash
 cp zabbix_agent2_openvpn-cert-monitor.conf /etc/zabbix/zabbix_agent2.d/openvpn-cert-monitor.conf
 ```
 
-Instale a regra sudoers e valide:
+Install and validate the sudoers rule:
 
 ```bash
 cp sudoers_openvpn-cert-monitor /etc/sudoers.d/zabbix-openvpn-cert-monitor
@@ -85,106 +88,106 @@ chmod 440 /etc/sudoers.d/zabbix-openvpn-cert-monitor
 visudo -cf /etc/sudoers.d/zabbix-openvpn-cert-monitor
 ```
 
-Reinicie o agente:
+Restart the agent:
 
 ```bash
 systemctl restart zabbix-agent2
 ```
 
-## Configuração
+## Configuration
 
-A configuração padrão considera a PKI em:
+The default PKI path is:
 
 ```text
 /etc/openvpn/easy-rsa/pki
 ```
 
-Para outro caminho ou para alterar a retenção de expirados, edite:
+To use a different path or change expired-certificate retention, edit:
 
 ```bash
 vi /etc/zabbix/openvpn-cert-monitor.conf
 ```
 
-Exemplo:
+Example:
 
 ```bash
 PKI_DIR="/etc/openvpn/easy-rsa/pki"
 EXPIRED_KEEP_DAYS=30
 ```
 
-## Testes
+## Testing
 
-Teste o coletor diretamente:
+Test the collector directly:
 
 ```bash
 /usr/local/libexec/zabbix/openvpn-cert-monitor.sh | jq '.summary'
 ```
 
-Teste como o usuário do agente:
+Test it as the Zabbix agent user:
 
 ```bash
 sudo -u zabbix /usr/local/libexec/zabbix/openvpn-cert-monitor.sh | jq '.summary'
 ```
 
-Liste certificados expirados que ainda permanecem no discovery:
+List expired certificates that are still present in discovery:
 
 ```bash
 /usr/local/libexec/zabbix/openvpn-cert-monitor.sh | \
 jq '.certificates[] | select(.status=="EXPIRED") | {name,days_left,status}'
 ```
 
-Nenhum certificado com `days_left < -30` deve aparecer com a configuração padrão.
+With the default configuration, no certificate with `days_left < -30` should appear.
 
-Confirme que certificados revogados foram retirados do discovery:
+Confirm that revoked certificates are excluded from discovery:
 
 ```bash
 /usr/local/libexec/zabbix/openvpn-cert-monitor.sh | \
 jq '.certificates[] | select(.status=="REVOKED")'
 ```
 
-O retorno esperado é vazio.
+The expected output is empty.
 
 ## Zabbix
 
-Importe:
+Import:
 
 ```text
 template_openvpn_certificates_zabbix_7.0.yaml
 ```
 
-Depois vincule o template:
+Then link the template:
 
 ```text
 OpenVPN certificates by Zabbix agent 2
 ```
 
-ao host que executa o Easy-RSA.
+to the host running Easy-RSA.
 
-O item mestre é:
+The master item is:
 
 ```text
 openvpn.certificates.get
 ```
 
-A coleta padrão do template é controlada por:
+The default collection interval is controlled by:
 
 ```text
 {$OPENVPN.CERT.INTERVAL}
 ```
 
-## Quando um certificado é renovado ou recriado
+## When a certificate is renewed or recreated
 
-O coletor identifica cada certificado pelo serial usado no LLD. Um certificado recriado com novo serial será descoberto como um novo recurso.
+The collector identifies each certificate by the serial number used in LLD. A recreated certificate with a new serial number is discovered as a new resource.
 
-Certificados antigos revogados ou expirados além do período configurado deixam automaticamente de participar do discovery.
+Old revoked certificates, or expired certificates beyond the configured retention period, automatically stop participating in discovery.
 
-## Segurança
+## Security
 
-O Zabbix não recebe nenhuma chave privada.
+Zabbix never receives private keys.
 
-O coletor lê somente metadados públicos dos certificados `.crt` e o estado registrado em `pki/index.txt`.
+The collector reads only public metadata from `.crt` files and certificate state from `pki/index.txt`.
 
-A regra `sudoers` permite ao usuário `zabbix` executar somente:
+The sudoers rule allows the `zabbix` user to execute only:
 
 ```text
 /usr/local/libexec/zabbix/openvpn-cert-monitor.sh
