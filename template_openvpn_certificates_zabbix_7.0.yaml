@@ -1,0 +1,306 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: d85cbb91e4ab472f9015a24dc8a01190
+      name: Templates/4Firewall
+  templates:
+    - uuid: 4f9da27e43134725b35e269cdaec1b8f
+      template: 'OpenVPN certificates by Zabbix agent 2'
+      name: 'OpenVPN certificates by Zabbix agent 2'
+      description: |
+        Monitors OpenVPN/Easy-RSA X.509 certificates using Zabbix Agent 2.
+
+        Discovery policy:
+          - valid certificates are monitored normally;
+          - expired certificates remain in discovery for EXPIRED_KEEP_DAYS (default 30);
+          - older expired certificates and revoked certificates are excluded from LLD;
+          - Easy-RSA files and index history are never deleted by the collector.
+
+        Designed for Zabbix 7.0.
+      vendor:
+        name: 4Firewall
+        version: 7.0-1
+      groups:
+        - name: Templates/4Firewall
+      items:
+        - uuid: 5df2a52575c046a3aea9e1ebc576a086
+          name: 'OpenVPN certificates: Get'
+          type: ZABBIX_PASSIVE
+          key: openvpn.certificates.get
+          delay: '{$OPENVPN.CERT.INTERVAL}'
+          history: 1d
+          trends: '0'
+          value_type: TEXT
+          description: 'Raw JSON returned by openvpn-cert-monitor.sh.'
+        - uuid: ea95086035c04d1599cf2768ed5a1f46
+          name: 'OpenVPN certificates: Total'
+          type: DEPENDENT
+          key: openvpn.certificates.total
+          history: 30d
+          trends: 365d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.summary.total
+          master_item:
+            key: openvpn.certificates.get
+        - uuid: b5f7bb25a2bf4cdfb30a49851894baed
+          name: 'OpenVPN certificates: Valid'
+          type: DEPENDENT
+          key: openvpn.certificates.valid
+          history: 30d
+          trends: 365d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.summary.valid
+          master_item:
+            key: openvpn.certificates.get
+        - uuid: f1020d3ea6344e7580772469c7468efa
+          name: 'OpenVPN certificates: Expired'
+          type: DEPENDENT
+          key: openvpn.certificates.expired
+          history: 30d
+          trends: 365d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.summary.expired
+          master_item:
+            key: openvpn.certificates.get
+        - uuid: 1c5cffecc4234374bd6333175daa31cb
+          name: 'OpenVPN certificates: Revoked'
+          type: DEPENDENT
+          key: openvpn.certificates.revoked
+          history: 30d
+          trends: 365d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.summary.revoked
+          master_item:
+            key: openvpn.certificates.get
+        - uuid: 00fa08bda51c4ff49334ba7eb03ade56
+          name: 'OpenVPN certificates: Old expired ignored by discovery'
+          type: DEPENDENT
+          key: openvpn.certificates.ignored_old_expired
+          history: 30d
+          trends: 365d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.summary.ignored_old_expired
+          master_item:
+            key: openvpn.certificates.get
+        - uuid: c1895f55c09541b896e285604494dd83
+          name: 'OpenVPN certificates: Revoked ignored by discovery'
+          type: DEPENDENT
+          key: openvpn.certificates.ignored_revoked
+          history: 30d
+          trends: 365d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.summary.ignored_revoked
+          master_item:
+            key: openvpn.certificates.get
+        - uuid: c4aaeaf0b94e4fddabfc2df60007a6d8
+          name: 'OpenVPN certificates: Collector errors'
+          type: DEPENDENT
+          key: openvpn.certificates.errors
+          history: 30d
+          trends: 365d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.summary.errors
+          master_item:
+            key: openvpn.certificates.get
+          triggers:
+            - uuid: 8b29e1b36e6b482cb185aa75bd487113
+              expression: 'last(/OpenVPN certificates by Zabbix agent 2/openvpn.certificates.errors)>0'
+              name: 'OpenVPN certificates: Collector reported errors'
+              priority: HIGH
+        - uuid: 9989df7c35f54cbf89962c351344735a
+          name: 'OpenVPN certificates: Expiring in 60 days'
+          type: DEPENDENT
+          key: openvpn.certificates.expiring60
+          history: 30d
+          trends: 365d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.summary.expiring_60d
+          master_item:
+            key: openvpn.certificates.get
+        - uuid: b14bd1a5b84f424e9dd36c41eb46bfd8
+          name: 'OpenVPN certificates: Expiring in 30 days'
+          type: DEPENDENT
+          key: openvpn.certificates.expiring30
+          history: 30d
+          trends: 365d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.summary.expiring_30d
+          master_item:
+            key: openvpn.certificates.get
+        - uuid: ecf297ea022f42559b46c6d402345ce7
+          name: 'OpenVPN certificates: Expiring in 15 days'
+          type: DEPENDENT
+          key: openvpn.certificates.expiring15
+          history: 30d
+          trends: 365d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.summary.expiring_15d
+          master_item:
+            key: openvpn.certificates.get
+        - uuid: e80d82313a28440db53ef8705145e48b
+          name: 'OpenVPN certificates: Expiring in 7 days'
+          type: DEPENDENT
+          key: openvpn.certificates.expiring7
+          history: 30d
+          trends: 365d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.summary.expiring_7d
+          master_item:
+            key: openvpn.certificates.get
+      discovery_rules:
+        - uuid: 6589f383597448fe887987fa222e2ac7
+          name: 'OpenVPN certificate discovery'
+          type: DEPENDENT
+          key: openvpn.certificates.discovery
+          filter:
+            evaltype: AND
+            conditions:
+              - macro: '{#CERT.NAME}'
+                value: '{$OPENVPN.CERT.LLD.MATCHES}'
+              - macro: '{#CERT.NAME}'
+                value: '{$OPENVPN.CERT.LLD.NOT_MATCHES}'
+                operator: NOT_MATCHES_REGEX
+          lifetime: 7d
+          lld_macro_paths:
+            - lld_macro: '{#CERT.NAME}'
+              path: $.name
+            - lld_macro: '{#CERT.SERIAL}'
+              path: $.serial
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.certificates
+          master_item:
+            key: openvpn.certificates.get
+          item_prototypes:
+            - uuid: f052a6f10bcb444e847c6287bc3e5b6d
+              name: 'OpenVPN certificate [{#CERT.NAME}]: Raw data'
+              type: DEPENDENT
+              key: 'openvpn.certificate.raw["{#CERT.SERIAL}"]'
+              history: '0'
+              trends: '0'
+              value_type: TEXT
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.certificates[?(@.serial == "{#CERT.SERIAL}")].first()'
+              master_item:
+                key: openvpn.certificates.get
+            - uuid: 06f57a2cb20d4e9380b8d92e87468e7c
+              name: 'OpenVPN certificate [{#CERT.NAME}]: Days left'
+              type: DEPENDENT
+              key: 'openvpn.certificate.days_left["{#CERT.SERIAL}"]'
+              value_type: FLOAT
+              units: d
+              history: 90d
+              trends: 365d
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.days_left
+              master_item:
+                key: 'openvpn.certificate.raw["{#CERT.SERIAL}"]'
+              trigger_prototypes:
+                - uuid: f90fc603f9564953bdba94c55ae5dcae
+                  expression: 'last(/OpenVPN certificates by Zabbix agent 2/openvpn.certificate.days_left["{#CERT.SERIAL}"])<={$OPENVPN.CERT.WARN} and last(/OpenVPN certificates by Zabbix agent 2/openvpn.certificate.days_left["{#CERT.SERIAL}"])>{$OPENVPN.CERT.AVERAGE}'
+                  name: 'OpenVPN certificate [{#CERT.NAME}]: Expires in less than {$OPENVPN.CERT.WARN} days'
+                  priority: WARNING
+                - uuid: cd016315614e4f6089140be5ec9c289b
+                  expression: 'last(/OpenVPN certificates by Zabbix agent 2/openvpn.certificate.days_left["{#CERT.SERIAL}"])<={$OPENVPN.CERT.AVERAGE} and last(/OpenVPN certificates by Zabbix agent 2/openvpn.certificate.days_left["{#CERT.SERIAL}"])>{$OPENVPN.CERT.HIGH}'
+                  name: 'OpenVPN certificate [{#CERT.NAME}]: Expires in less than {$OPENVPN.CERT.AVERAGE} days'
+                  priority: AVERAGE
+                - uuid: 3d5192c9e33048aeb07defd161de5eb3
+                  expression: 'last(/OpenVPN certificates by Zabbix agent 2/openvpn.certificate.days_left["{#CERT.SERIAL}"])<={$OPENVPN.CERT.HIGH} and last(/OpenVPN certificates by Zabbix agent 2/openvpn.certificate.days_left["{#CERT.SERIAL}"])>{$OPENVPN.CERT.DISASTER}'
+                  name: 'OpenVPN certificate [{#CERT.NAME}]: Expires in less than {$OPENVPN.CERT.HIGH} days'
+                  priority: HIGH
+                - uuid: dae302552f6d40eba620f88c4f6c8e24
+                  expression: 'last(/OpenVPN certificates by Zabbix agent 2/openvpn.certificate.days_left["{#CERT.SERIAL}"])<={$OPENVPN.CERT.DISASTER} and last(/OpenVPN certificates by Zabbix agent 2/openvpn.certificate.days_left["{#CERT.SERIAL}"])>=0'
+                  name: 'OpenVPN certificate [{#CERT.NAME}]: Expires in less than {$OPENVPN.CERT.DISASTER} days'
+                  priority: DISASTER
+                - uuid: cc4073db9ca14990a1a31e3c194f73b2
+                  expression: 'last(/OpenVPN certificates by Zabbix agent 2/openvpn.certificate.days_left["{#CERT.SERIAL}"])<0'
+                  name: 'OpenVPN certificate [{#CERT.NAME}]: Expired'
+                  priority: DISASTER
+            - uuid: 0fdaceae7a894a0db7065e6b1d2035e5
+              name: 'OpenVPN certificate [{#CERT.NAME}]: Status'
+              type: DEPENDENT
+              key: 'openvpn.certificate.status["{#CERT.SERIAL}"]'
+              value_type: CHAR
+              history: 90d
+              trends: '0'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.status
+              master_item:
+                key: 'openvpn.certificate.raw["{#CERT.SERIAL}"]'
+            - uuid: e491804753ef404283417ccb14bd04a5
+              name: 'OpenVPN certificate [{#CERT.NAME}]: Easy-RSA index status'
+              type: DEPENDENT
+              key: 'openvpn.certificate.index_status["{#CERT.SERIAL}"]'
+              value_type: CHAR
+              history: 90d
+              trends: '0'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.index_status
+              master_item:
+                key: 'openvpn.certificate.raw["{#CERT.SERIAL}"]'
+            - uuid: 5c82c61bb6b645a286cf06f472521f51
+              name: 'OpenVPN certificate [{#CERT.NAME}]: Expiration date'
+              type: DEPENDENT
+              key: 'openvpn.certificate.not_after["{#CERT.SERIAL}"]'
+              value_type: CHAR
+              history: 90d
+              trends: '0'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.not_after
+              master_item:
+                key: 'openvpn.certificate.raw["{#CERT.SERIAL}"]'
+      macros:
+        - macro: '{$OPENVPN.CERT.INTERVAL}'
+          value: 12h
+        - macro: '{$OPENVPN.CERT.WARN}'
+          value: '60'
+        - macro: '{$OPENVPN.CERT.AVERAGE}'
+          value: '30'
+        - macro: '{$OPENVPN.CERT.HIGH}'
+          value: '15'
+        - macro: '{$OPENVPN.CERT.DISASTER}'
+          value: '7'
+        - macro: '{$OPENVPN.CERT.LLD.MATCHES}'
+          value: '.*'
+        - macro: '{$OPENVPN.CERT.LLD.NOT_MATCHES}'
+          value: '^$'
+      tags:
+        - tag: class
+          value: software
+        - tag: target
+          value: openvpn
+        - tag: target
+          value: certificate
